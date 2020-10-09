@@ -14,6 +14,7 @@ type Transaction struct {
 	BankName        string
 	BankCountryCode string
 	USDPerSecond    float64
+	// MS              float64
 }
 
 type Result struct {
@@ -42,7 +43,7 @@ func main() {
 		BankCountryCode: "us",
 	})
 	transx = append(transx, Transaction{
-		ID:              "us-300",
+		ID:              "us-3mill",
 		Amount:          float64(3000000),
 		BankName:        "X",
 		BankCountryCode: "us",
@@ -56,17 +57,17 @@ func main() {
 
 	m.Set("us", float64(5))
 	m.Set("in", float64(200))
-	m.Set("uk1", float64(50))
-	m.Set("uk2", float64(50))
-	m.Set("uk3", float64(50))
-	m.Set("uk4", float64(50))
-	m.Set("uk5", float64(50))
-	m.Set("uk6", float64(50))
-	m.Set("uk7", float64(50))
-	m.Set("uk8", float64(50))
-	m.Set("uk9", float64(50))
-	m.Set("uk0", float64(50))
-	m.Set("uk2", float64(50))
+	m.Set("uk", float64(50))
+	// m.Set("uk2", float64(50))
+	// m.Set("uk3", float64(50))
+	// m.Set("uk4", float64(50))
+	// m.Set("uk5", float64(50))
+	// m.Set("uk6", float64(50))
+	// m.Set("uk7", float64(50))
+	// m.Set("uk8", float64(50))
+	// m.Set("uk9", float64(50))
+	// m.Set("uk0", float64(50))
+	// m.Set("uk2", float64(50))
 
 	ss := time.Now()
 	prioritize(transx)
@@ -83,18 +84,19 @@ func main() {
 
 func prioritize(t []Transaction) {
 	var av interface{}
-	var bv interface{}
-	var ok1 bool
+	// var bv interface{}
+	// var ok1 bool
 	var ok2 bool
-	sort.Slice(t, func(a int, b int) bool {
-		av, ok1 = m.Get(t[a].BankCountryCode)
-		bv, ok2 = m.Get(t[b].BankCountryCode)
-		if !ok1 || !ok2 {
-			return false
+	for i, v := range t {
+		av, ok2 = m.Get(v.BankCountryCode)
+		if !ok2 {
+			// Can't find any latenzy...
+			continue
 		}
-		// t[a].USDPerSecond = t[a].Amount / av.(float64)
-		// t[b].USDPerSecond = t[b].Amount / bv.(float64)
-		return (t[a].Amount / av.(float64)) > (t[b].Amount / bv.(float64))
+		t[i].USDPerSecond = v.Amount / av.(float64)
+	}
+	sort.Slice(t, func(a int, b int) bool {
+		return t[a].USDPerSecond > t[b].USDPerSecond
 	})
 }
 
