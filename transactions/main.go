@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -42,7 +43,7 @@ func main() {
 		panic(err)
 	}
 
-	transx := []Transaction{}
+	transx := []*Transaction{}
 	csvFile, _ := os.Open("transactions.txt")
 	reader := csv.NewReader(bufio.NewReader(csvFile))
 	for {
@@ -60,7 +61,7 @@ func main() {
 			log.Println(err, line[1])
 			continue
 		}
-		transx = append(transx, Transaction{
+		transx = append(transx, &Transaction{
 			ID:              line[0],
 			Amount:          amountAsFloat,
 			BankCountryCode: line[2],
@@ -68,55 +69,63 @@ func main() {
 	}
 
 	prioritize(transx)
+
 }
 
-func prioritize(transx []Transaction) {
+func prioritize(transx []*Transaction) []*Result {
 	ss := time.Now()
-	var maxValue float64 = 1000
-	var currentMS float64 = 0
-	var totalAmount float64 = 0
-	var av float64
+	var v float64
 	var ok2 bool
 	tlength := len(transx) - 1
+
 	for i := 0; i <= tlength; i++ {
 		mxm.Lock()
-		av, ok2 = mx[transx[i].BankCountryCode]
+		v, ok2 = mx[transx[i].BankCountryCode]
 		mxm.Unlock()
 		if !ok2 {
 			// Can't find the country code ..
 			// we should probably handle this in a more gracefull way
 			continue
 		}
-		transx[i].MS = av
-		transx[i].USDPerMillisecond = transx[i].Amount / av
+		transx[i].MS = v
+		transx[i].USDPerMillisecond = transx[i].Amount / v
 	}
-	sort.Slice(transx, func(a int, b int) bool {
 
+	sort.Slice(transx, func(a int, b int) bool {
 		return transx[a].USDPerMillisecond > transx[b].USDPerMillisecond
 	})
 	finalProcessingTime := time.Since(ss)
+	fmt.Println("Prioritization / Microseconds:", finalProcessingTime.Microseconds())
+	return ProcessTransactions(transx)
+}
 
+func ProcessTransactions(transx []*Transaction) (results []*Result) {
+	ss := time.Now()
+	tlength := len(transx) - 1
+	var maxValue float64 = 1000
+	var currentMS float64 = 0
+	var totalAmount float64 = 0
 	for i := 0; i <= tlength; i++ {
 		if (currentMS + transx[i].MS) > maxValue {
 			continue
 		}
 		currentMS += transx[i].MS
 		totalAmount += transx[i].Amount
+		results = append(results, &Result{
+			ID:         transx[i].ID,
+			Fraudulent: isTransactionFraudulent(transx[i]),
+		})
 	}
 	postAssignTime := time.Since(ss)
-	log.Println("Prioritization / Microseconds:", finalProcessingTime.Microseconds())
-	log.Println("Assigning Transactions / Microseconds:", postAssignTime.Microseconds())
-	log.Println("Total Amount Processed:", totalAmount)
-	log.Println("Total Milliseconds assigned:", currentMS)
-	log.Println("USD Per Millisecond:", totalAmount/currentMS)
-	log.Println("Total USD Per 1000 Milliseconds:", 1000*(totalAmount/currentMS))
-}
-
-func ProcessTransactions(transaction []Transaction) (results []Result) {
-
+	fmt.Println("Processing Transactions / Microseconds:", postAssignTime.Microseconds())
+	fmt.Println("Total Amount Processed:", totalAmount)
+	fmt.Println("Total Transactions Processed:", len(results))
+	fmt.Println("Total Milliseconds assigned:", currentMS)
+	fmt.Println("USD Per Millisecond:", totalAmount/currentMS)
+	fmt.Println("Total USD Per 1000 Milliseconds:", 1000*(totalAmount/currentMS))
 	return
 }
 
-func isTransactionFraudulent(transaction *Transaction) {
-
+func isTransactionFraudulent(transaction *Transaction) bool {
+	return true
 }
