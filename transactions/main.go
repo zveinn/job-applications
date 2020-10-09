@@ -87,13 +87,14 @@ func prioritize(t []Transaction) {
 	// var bv interface{}
 	// var ok1 bool
 	var ok2 bool
-	for i, v := range t {
-		av, ok2 = m.Get(v.BankCountryCode)
+	tlength := len(t) - 1
+	for i := 0; i <= tlength; i++ {
+		av, ok2 = m.Get(t[i].BankCountryCode)
 		if !ok2 {
 			// Can't find any latenzy...
 			continue
 		}
-		t[i].USDPerSecond = v.Amount / av.(float64)
+		t[i].USDPerSecond = t[i].Amount / av.(float64)
 	}
 	sort.Slice(t, func(a int, b int) bool {
 		return t[a].USDPerSecond > t[b].USDPerSecond
