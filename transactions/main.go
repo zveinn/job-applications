@@ -3,9 +3,8 @@ package main
 import (
 	"log"
 	"sort"
+	"sync"
 	"time"
-
-	"github.com/cornelk/hashmap"
 )
 
 type Transaction struct {
@@ -22,8 +21,8 @@ type Result struct {
 	Fraudulent bool
 }
 
-// Lock free concurrent hash map implementation
-var m = &hashmap.HashMap{}
+var mx = make(map[string]float64)
+var mxm = sync.Mutex{}
 
 func main() {
 
@@ -55,19 +54,9 @@ func main() {
 		BankCountryCode: "us",
 	})
 
-	m.Set("us", float64(5))
-	m.Set("in", float64(200))
-	m.Set("uk", float64(50))
-	// m.Set("uk2", float64(50))
-	// m.Set("uk3", float64(50))
-	// m.Set("uk4", float64(50))
-	// m.Set("uk5", float64(50))
-	// m.Set("uk6", float64(50))
-	// m.Set("uk7", float64(50))
-	// m.Set("uk8", float64(50))
-	// m.Set("uk9", float64(50))
-	// m.Set("uk0", float64(50))
-	// m.Set("uk2", float64(50))
+	mx["us"] = 5
+	mx["in"] = 300
+	mx["uk"] = 50
 
 	ss := time.Now()
 	prioritize(transx)
@@ -83,16 +72,18 @@ func main() {
 // SORT BY .. AMOUNT/respone time
 
 func prioritize(t []Transaction) {
-	var av interface{}
+	var av float64
 	var ok2 bool
 	tlength := len(t) - 1
 	for i := 0; i <= tlength; i++ {
-		av, ok2 = m.Get(t[i].BankCountryCode)
+		mxm.Lock()
+		av, ok2 = mx[t[i].BankCountryCode]
+		mxm.Unlock()
 		if !ok2 {
 			// Can't find any latenzy...
 			continue
 		}
-		t[i].USDPerSecond = t[i].Amount / av.(float64)
+		t[i].USDPerSecond = t[i].Amount / av
 	}
 	sort.Slice(t, func(a int, b int) bool {
 		return t[a].USDPerSecond > t[b].USDPerSecond
