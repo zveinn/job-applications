@@ -84,8 +84,6 @@ func main() {
 
 func prioritize(t []Transaction) {
 	var av interface{}
-	// var bv interface{}
-	// var ok1 bool
 	var ok2 bool
 	tlength := len(t) - 1
 	for i := 0; i <= tlength; i++ {
