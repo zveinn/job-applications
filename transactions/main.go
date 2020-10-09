@@ -67,41 +67,10 @@ func main() {
 		})
 	}
 
-	// log.Println(mx)
-	// log.Println(transx)
-	// os.Exit(1)
+	RunTest(transx)
+}
 
-	// for i := 0; i < 100000; i++ {
-	// 	transx = append(transx, Transaction{
-	// 		ID:              "inx",
-	// 		Amount:          float64(i + 200),
-	// 		BankName:        "X",
-	// 		BankCountryCode: "in",
-	// 	})
-	// }
-	// transx = append(transx, Transaction{
-	// 	ID:              "us-300",
-	// 	Amount:          float64(300),
-	// 	BankName:        "X",
-	// 	BankCountryCode: "us",
-	// })
-	// transx = append(transx, Transaction{
-	// 	ID:              "us-3mill",
-	// 	Amount:          float64(3000000),
-	// 	BankName:        "X",
-	// 	BankCountryCode: "us",
-	// })
-	// transx = append(transx, Transaction{
-	// 	ID:              "us-2",
-	// 	Amount:          float64(2),
-	// 	BankName:        "X",
-	// 	BankCountryCode: "us",
-	// })
-
-	// mx["us"] = 5
-	// mx["in"] = 300
-	// mx["uk"] = 50
-
+func RunTest(transx []Transaction) {
 	ss := time.Now()
 	prioritize(transx)
 	finalProcessingTime := time.Since(ss)
@@ -112,16 +81,17 @@ func main() {
 	var totalAmount float64 = 0
 
 	for i := 0; i <= tlength; i++ {
-		if (currentMS + transx[i].MS) >= maxValue {
-			break
+		if (currentMS + transx[i].MS) > maxValue {
+			continue
 		}
 		currentMS += transx[i].MS
 		totalAmount += transx[i].Amount
 	}
-	log.Println("Prioritization time in Microseconds:", finalProcessingTime.Microseconds())
-	log.Println("Prioritization time in Milliseconds:", finalProcessingTime.Milliseconds())
+	postAssignTime := time.Since(ss)
+	log.Println("Prioritization / Microseconds:", finalProcessingTime.Microseconds())
+	log.Println("Assigning Transactions / Microseconds:", postAssignTime.Microseconds())
 	log.Println("Total Amount Processed:", totalAmount)
-	log.Println("Total Milliseconds used:", currentMS)
+	log.Println("Total Milliseconds assigned:", currentMS)
 	log.Println("USD Per Millisecond:", totalAmount/currentMS)
 	log.Println("Total USD Per 1000 Milliseconds:", 1000*(totalAmount/currentMS))
 }
