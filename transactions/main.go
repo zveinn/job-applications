@@ -67,18 +67,34 @@ func main() {
 		})
 	}
 
-	RunTest(transx)
+	prioritize(transx)
 }
 
-func RunTest(transx []Transaction) {
+func prioritize(transx []Transaction) {
 	ss := time.Now()
-	prioritize(transx)
-	finalProcessingTime := time.Since(ss)
-
 	var maxValue float64 = 1000
 	var currentMS float64 = 0
-	tlength := len(transx) - 1
 	var totalAmount float64 = 0
+	var av float64
+	var ok2 bool
+	tlength := len(transx) - 1
+	for i := 0; i <= tlength; i++ {
+		mxm.Lock()
+		av, ok2 = mx[transx[i].BankCountryCode]
+		mxm.Unlock()
+		if !ok2 {
+			// Can't find the country code ..
+			// we should probably handle this in a more gracefull way
+			continue
+		}
+		transx[i].MS = av
+		transx[i].USDPerMillisecond = transx[i].Amount / av
+	}
+	sort.Slice(transx, func(a int, b int) bool {
+
+		return transx[a].USDPerMillisecond > transx[b].USDPerMillisecond
+	})
+	finalProcessingTime := time.Since(ss)
 
 	for i := 0; i <= tlength; i++ {
 		if (currentMS + transx[i].MS) > maxValue {
@@ -94,31 +110,6 @@ func RunTest(transx []Transaction) {
 	log.Println("Total Milliseconds assigned:", currentMS)
 	log.Println("USD Per Millisecond:", totalAmount/currentMS)
 	log.Println("Total USD Per 1000 Milliseconds:", 1000*(totalAmount/currentMS))
-}
-
-// 1000 ms bucket
-// varying response times from apis..
-// TO GET USD/per MS processing rate per fransaction we have to
-// SORT BY .. AMOUNT/respone time
-
-func prioritize(t []Transaction) {
-	var av float64
-	var ok2 bool
-	tlength := len(t) - 1
-	for i := 0; i <= tlength; i++ {
-		mxm.Lock()
-		av, ok2 = mx[t[i].BankCountryCode]
-		mxm.Unlock()
-		if !ok2 {
-			// Can't find any latenzy...
-			continue
-		}
-		t[i].MS = av
-		t[i].USDPerMillisecond = t[i].Amount / av
-	}
-	sort.Slice(t, func(a int, b int) bool {
-		return t[a].USDPerMillisecond > t[b].USDPerMillisecond
-	})
 }
 
 func ProcessTransactions(transaction []Transaction) (results []Result) {
