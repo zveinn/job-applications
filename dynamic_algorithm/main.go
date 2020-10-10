@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -99,8 +100,8 @@ func main() {
 	x2, _ := Custom(1000, items)
 	fmt.Println("DYNAMIC WEIGHT: (refactored)")
 	fmt.Println("Prioritization // Microseconds:", time.Since(xt).Microseconds())
-	fmt.Println("TOTAL processed USD: ", x2)
-	fmt.Println("USD per Millisecond:", x2/1000)
+	fmt.Println("TOTAL processed USD: ", math.Round(x2*100)/100)
+	fmt.Println("USD per Millisecond:", (math.Round(x2*100)/100)/1000)
 	// var totalValue float64 = 0
 	// for _, v := range config2 {
 	// 	if v != 0 {
